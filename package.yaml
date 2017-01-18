@@ -22,7 +22,7 @@ dependencies:
 
 library:
   source-dirs: src
-  ghc-options:      -Wall -Werror -threaded -O2
+  ghc-options:      -Wall -Werror -O2
 
 tests:
   setoid-test:

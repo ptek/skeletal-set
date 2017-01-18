@@ -1,116 +1,164 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
+{-|
+Module      : Data.Setoid
+Description : A strict implementation of Setoid
+Copyright   : (c) Global Access Internet Services GmbH 2017
+License     : BSDB-3
+Maintainer  : pavlo@kerestey.net
+-}
 module Data.Setoid
   ( Setoid
+    -- * Class
+  , EquivalenceBy(..)
+    -- * Operators
   , (=~=)
   , (\\)
   , (∪)
-  , difference
+    -- * Construction
   , empty
+  , ø
   , singleton
-  , member
-  , null
   , union
   , unions
   , unionWith
-  , ø
+    -- * Difference
+  , difference
+    -- * Query
+  , member
+  , null
+  , equivalence
+    -- * Conversion
   , fromList
   , fromListWith
   , toList
   ) where
 
-import qualified Data.List as List
-import Data.Map (Map)
-import qualified Data.Map as Map
-import Data.Setoid.Equivalence
-import qualified Prelude as P
-import Prelude hiding (filter, lookup, map, mapM, mapM_, null, zip)
+import qualified Data.List               as List
+import qualified Data.Map.Strict         as Map
+import           Data.Setoid.Equivalence
+import           Data.Setoid.Types
+import           Prelude                 hiding (filter, lookup, map, mapM,
+                                          mapM_, null, zip)
+import qualified Prelude                 as P
 
-data Setoid k a =
-  Setoid !(Map k a)
-  deriving (Eq, Ord)
-
+-- | Instance Show, used for debugging
 instance (Show a) =>
-         Show (Setoid k a) where
+         Show (Setoid e a) where
   show s = "Setoid {\n" ++ P.unlines (P.map show (toList s)) ++ "}"
 
-instance (EquivalenceBy k a, Ord a) =>
-         Monoid (Setoid k a) where
+-- | Monoid instance for Setoid
+instance (Ord e, Ord a) =>
+         Monoid (Setoid e a) where
   mempty = empty
   mappend = union
   mconcat = unions
 
-equivalence
-  :: (EquivalenceBy k a)
-  => Setoid k a -> Setoid k a -> Bool
-equivalence (Setoid x) (Setoid y) = Map.keys x == Map.keys y
-
+-- * Operators
 infix 4 =~=
 
+-- | Same as equivalence
 (=~=)
-  :: (EquivalenceBy k a)
-  => Setoid k a -> Setoid k a -> Bool
+  :: (Eq e)
+  => Setoid e a -> Setoid e a -> Bool
 (=~=) = equivalence
-
-singleton
-  :: (EquivalenceBy k a)
-  => a -> Setoid k a
-singleton a = Setoid (Map.singleton (eqRel a) a)
-
-difference
-  :: (Ord k)
-  => Setoid k a -> Setoid k a -> Setoid k a
-difference (Setoid x) (Setoid y) = Setoid (Map.difference x y)
 
 infix 5 \\
 
+-- | Same as difference
 (\\)
-  :: (Ord k)
-  => Setoid k a -> Setoid k a -> Setoid k a
+  :: (Ord e)
+  => Setoid e a -> Setoid e a -> Setoid e a
 (\\) = difference
 
-empty :: Setoid k a
-empty = Setoid Map.empty
-
-union
-  :: (EquivalenceBy k a, Ord a)
-  => Setoid k a -> Setoid k a -> Setoid k a
-union = unionWith max
-
+-- | Same as union
 (∪)
-  :: (EquivalenceBy k a, Ord a)
-  => Setoid k a -> Setoid k a -> Setoid k a
+  :: (Ord e, Ord a)
+  => Setoid e a -> Setoid e a -> Setoid e a
 (∪) = union
 
-ø :: Setoid k a
+-- * Construction
+-- | An empty Setoid
+empty :: Setoid e a
+empty = Setoid Map.empty
+
+-- | Same as empty
+ø :: Setoid e a
 ø = empty
 
+-- | A Setoid with a single element
+singleton
+  :: (EquivalenceBy e a)
+  => a -> Setoid e a
+singleton a = Setoid (Map.singleton (eqRel a) a)
+
+-- | Combine two Setoids resolving conflicts with `max` by
+-- default. This makes the union operation symmetrical.
+union
+  :: (Ord e, Ord a)
+  => Setoid e a -> Setoid e a -> Setoid e a
+union = unionWith max
+
+-- | A generalized variant of union which accepts a function that will
+-- be used when two equivalent elements are found an the conflict
+-- needs to be resolved. Note that the elements are not necessarily
+-- equal
 unionWith
-  :: (EquivalenceBy k a)
-  => (a -> a -> a) -> Setoid k a -> Setoid k a -> Setoid k a
+  :: (Ord e)
+  => (a -> a -> a) -> Setoid e a -> Setoid e a -> Setoid e a
 unionWith f (Setoid x1) (Setoid x2) = Setoid (Map.unionWith f x1 x2)
 
+-- | Union several Setoids into one. This uses de default union
+-- variant
 unions
-  :: (EquivalenceBy k a, Ord a)
-  => [Setoid k a] -> Setoid k a
+  :: (Ord e, Ord a)
+  => [Setoid e a] -> Setoid e a
 unions = List.foldl' union empty
 
-toList :: Setoid k a -> [a]
-toList (Setoid a) = Map.elems a
+-- | Difference of two setoids. Return elements of the first setoid
+-- not existing in the second setoid.
+difference
+  :: (Ord e)
+  => Setoid e a -> Setoid e a -> Setoid e a
+difference (Setoid x) (Setoid y) = Setoid (Map.difference x y)
 
-fromList
-  :: (EquivalenceBy k a, Ord a)
-  => [a] -> Setoid k a
-fromList = fromListWith max
-
--- fromList = List.foldl' (\a b -> union a (singleton b)) empty -- O(n*2n)
-fromListWith
-  :: (EquivalenceBy k a)
-  => (a -> a -> a) -> [a] -> Setoid k a
-fromListWith f = Setoid . Map.fromListWith f . P.map (\x -> (eqRel x, x)) -- O(n+(n*log n))
-
+-- * Conversion
+-- | Test if an element is a member of a Setoid
 member
-  :: (EquivalenceBy k a)
-  => a -> Setoid k a -> Bool
+  :: (EquivalenceBy e a, Ord e)
+  => a -> Setoid e a -> Bool
 member e (Setoid x) = Map.member (eqRel e) x
 
-null :: Setoid k a -> Bool
+-- | Test if Setoid is empty
+null :: Setoid e a -> Bool
 null (Setoid x) = Map.null x
+
+-- | Test if two Setoids are equivalent i.e. if all the elements are
+-- equivalent
+equivalence
+  :: (Eq e)
+  => Setoid e a -> Setoid e a -> Bool
+equivalence (Setoid x) (Setoid y) = Map.keys x == Map.keys y
+
+-- * Conversion
+-- ** Lists
+-- | Convert setoid into a List
+toList :: Setoid e a -> [a]
+toList (Setoid a) = Map.elems a
+
+-- | A default variant of fromList using `max` to resolve a conflict
+-- if two equivalent elements are found. Therefore it depends on Ord
+-- instance of the element
+fromList
+  :: (EquivalenceBy e a, Ord e, Ord a)
+  => [a] -> Setoid e a
+fromList = fromListWith max
+
+-- | A generalized version of fromList, which accepts a function
+-- invoked if a conflict between two equivalent elements has to be
+-- resolved
+fromListWith
+  :: (EquivalenceBy e a, Ord e)
+  => (a -> a -> a) -> [a] -> Setoid e a
+fromListWith f = Setoid . Map.fromListWith f . P.map (\x -> (eqRel x, x)) -- O(n+(n*log n)) -- An implementation of List.foldl' (\a b -> union a (singleton b)) empty would be O(n*2n)
