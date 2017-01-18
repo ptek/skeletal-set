@@ -1,15 +1,117 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-{-|
-Module      : Data.Setoid
-Description : A strict implementation of Setoid
-Copyright   : (c) Global Access Internet Services GmbH 2017
-License     : BSDB-3
-Maintainer  : pavlo@kerestey.net
+--------------------------------------------------------------------
+{- |
+Module    : Data.Setoid
+Copyright : (c) Global Access Internet Services GmbH
+License   : BSD3
+Maintainer: Pavlo Kerestey <pavlo@kerestey.net>
+
+This is a Haskell implementation of setoid
+(https://en.wikipedia.org/wiki/Setoid) - a set equipped with an
+equivalence relation. Mostly, one would chose equivalence to be not
+the same as equality. This makes it more strict regarding membership
+of elements as compared to sets. If equivalence relation is equality,
+though, then setoid has the same properties as a set.
+
+== Usage examples
+
+When manipulating collections of objects in the real world, we often
+use lists/arrays. Sometimes we wouls like to express some properties
+of the relation between the elements though, and the simple lists do
+not provide such possibility. As with the famous "Data.Set" library
+from the containers this library provides a guarantee that a setoid is
+correct by construction, and also that any manipulations will not
+break this promise.
+
+It is useful for things like time series of sampling data, collections
+of users (who are unique by username or email) to keep the same
+structure as the one which would be used in the database with unique
+indexes.
+
+=== Apples and Oranges
+
+To give a simple example, we will try start with somewhat obscure idea
+of combining apples and oranges to a Setoid of fruit names (by
+color). We want one fruit per colour as a result and don't care if its
+apple or an orange.
+
+@
+import Data.Setoid (Setoid)
+import qualified Data.Setoid as Setoid
+
+data Colour = Red | Green | Blue deriving (Eq,Ord)
+
+instance EquivalenceBy Colour (Colour,String) where
+  eqRel = fst
+
+apples, organges, fruits :: Setoid Int (Int,String)
+apples  = Setoid.fromList [(Green,"golden delicious"), (Orange,"honeycrunch")]
+oranges = Setoid.fromList [(Orange,"seville"), (Red,"blood orange")]
+
+fruits = apples `Setoid.union` oranges
+-- > [(Green,"golden delicious"), (Orange,"seville"), (Red,"blood orange")]
+@
+
+One can see the benefit of using a `Setoid` instead of "Data.List"
+because with the latter, we would have to use 'Data.List.nubBy' every
+time the data is transformed.
+
+When performing a union, our implementation would use `max` between
+two equivalent elements to resolve the conflict. Bear in mind, that
+the elements, though equivalent, might not be equal. In the example
+above, ordering of @ "seville" @ is bigger than @ "golden delicious" @
+thus @ ("Orange", "seville") @ is chosen in the result.
+
+=== Friends of friends and computation on union
+
+For another example, lets get all the users of two different services
+F and G. We are not interested in the different details, but want the
+instance of the users to be unique.
+
+@
+type Email = String
+data User = User {
+  email :: Email,
+  contacts :: Int
+  } deriving (Eq,Show)
+
+instance EquivalenceBy Email User where
+eqRel u = email u
+
+usersF, usersG, allUsers :: Setoid Email User
+usersF <- getUsers F
+usersG <- getUsers G
+
+allUsers = Setoid.unionWith mergeContactDetails usersF usersG
+
+mergeContactDetails :: User -> User -> User
+mergeContactDetails a b = User (email a) (contacts a + contacts b)
+-- ... --
+@
+
+We assume that here are equivalent elements in both setoids - in this
+case they have the same email adress. Thus we use `unionWith` to merge
+the other details of the contact. Here, we could also do computations
+and, for example, sum the number of friends/contacts from bothe
+services.
+
+Here is also one of the shortcommings of the
+library. mergeContactDetails choses the email of the first
+argument. Sinse in the context of unionWith, the emails of the first
+and the second users are the same. It is not nice from the perspective
+of the function itself though.
+
+@ Setoid.size allUsers @ Would give us the amount of all unique users
+in both services together.
+
 -}
-module Data.Setoid
-  ( Setoid
+--------------------------------------------------------------------
+module Data.Setoid (
+  -- {{{
+  -- * Type
+    Setoid
     -- * Class
   , EquivalenceBy(..)
     -- * Operators
@@ -58,7 +160,7 @@ instance (Ord e, Ord a) =>
 -- * Operators
 infix 4 =~=
 
--- | Same as equivalence
+-- | Same as `equivalence`
 (=~=)
   :: (Eq e)
   => Setoid e a -> Setoid e a -> Bool
@@ -66,13 +168,13 @@ infix 4 =~=
 
 infix 5 \\
 
--- | Same as difference
+-- | Same as `difference`
 (\\)
   :: (Ord e)
   => Setoid e a -> Setoid e a -> Setoid e a
 (\\) = difference
 
--- | Same as union
+-- | Same as `union`
 (∪)
   :: (Ord e, Ord a)
   => Setoid e a -> Setoid e a -> Setoid e a
@@ -83,7 +185,7 @@ infix 5 \\
 empty :: Setoid e a
 empty = Setoid Map.empty
 
--- | Same as empty
+-- | Same as `empty`
 ø :: Setoid e a
 ø = empty
 
@@ -94,7 +196,8 @@ singleton
 singleton a = Setoid (Map.singleton (eqRel a) a)
 
 -- | Combine two Setoids resolving conflicts with `max` by
--- default. This makes the union operation symmetrical.
+-- default. This makes the union operation commutative and
+-- associative.
 union
   :: (Ord e, Ord a)
   => Setoid e a -> Setoid e a -> Setoid e a

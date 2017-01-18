@@ -2,10 +2,10 @@
 
 This is a Haskell implementation of setoid
 (https://en.wikipedia.org/wiki/Setoid) - a set equipped with an
-equivalence relation. Usually equivalence is not equality. This makes
-it more strict regarding membership of elements as compared to set. If
-equivalence relation is equality then setoid has the same properties
-as a set.
+equivalence relation. Mostly, one would chose equivalence to be not
+the same as equality. This makes it more strict regarding membership
+of elements as compared to sets. If equivalence relation is equality,
+though, then setoid has the same properties as a set.
 
 ## Usage examples
 
@@ -90,22 +90,6 @@ Setoid.size allUsers
 ```
 
 Would give us the amount of all unique users in both services together.
-
-
-## Peculiar details
-
-### Union
-
-Since `Setoid.union` is implemented as `Setoid.unionWith max` it makes the default union operation commutative and associative.
-
-### Tuple Instance
-
-TupleSetoid already has the instance we would need in the Example 1:
-
-```haskell
-instance EquivalenceBy eq (eq,val) where
-  eqRel = fst
-```
 
 ## Future Work
 
