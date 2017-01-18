@@ -1,0 +1,39 @@
+name:                setoid
+version:             0.1.0.0
+synopsis:            A Haskell implementation of setoid
+                     (https://en.wikipedia.org/wiki/Setoid) - a set equipped with
+                     an equivalence relation. Usually equivalence is not equality.
+                     This makes it more strict regarding membership of elements as
+                     compared to set.
+description:         For full description, please see README.md
+license:             BSD3
+author:              Pavlo Kerestey
+maintainer:          kerestey@global.de
+copyright:           Global Access Internet Services GmbH
+category:            Data
+build-type:          Simple
+extra-source-files:
+- changelog.md
+- README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - containers
+
+library:
+  source-dirs: src
+  ghc-options:      -Wall -Werror -threaded -O2
+
+tests:
+  setoid-test:
+    source-dirs:      tests
+    main:             RunTests.hs
+    ghc-options:      -Wall -threaded  -rtsopts -with-rtsopts=-N -O
+    dependencies:
+      - setoid
+      - smallcheck
+      - tasty
+      - tasty-discover
+      - tasty-hunit
+      - tasty-quickcheck
+      - tasty-smallcheck
