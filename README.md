@@ -27,20 +27,22 @@ To start with a simple example we will combine apples and oranges to a
 Setoid of fruit names by color. We want one fruit per colour as a
 result and don't care if its apple or an orange.
 
-    import Data.Setoid (Setoid)
-    import qualified Data.Setoid as Setoid
+```haskell
+import Data.Setoid (Setoid)
+import qualified Data.Setoid as Setoid
 
-    data Colour = Red | Green | Blue deriving (Eq,Ord)
+data Colour = Red | Green | Blue deriving (Eq,Ord)
 
-    instance EquivalenceBy Colour (Colour,String) where
-      eqRel = fst
+instance EquivalenceBy Colour (Colour,String) where
+  eqRel = fst
 
-    apples, organges, fruits :: Setoid Int (Int,String)
-    apples  = Setoid.fromList [(Green,"golden delicious"), (Orange,"honeycrunch")]
-    oranges = Setoid.fromList [(Orange,"seville"), (Red,"blood orange")]
+apples, organges, fruits :: Setoid Int (Int,String)
+apples  = Setoid.fromList [(Green,"golden delicious"), (Orange,"honeycrunch")]
+oranges = Setoid.fromList [(Orange,"seville"), (Red,"blood orange")]
 
-    fruits = apples `Setoid.union` oranges
-    -- > [(Green,"golden delicious"),(Orange,"seville"),(Red,"blood orange")]
+fruits = apples `Setoid.union` oranges
+-- > [(Green,"golden delicious"),(Orange,"seville"),(Red,"blood orange")]
+```
 
 Of course one could use a list and then just `nubBy` but one would
 have to do this every time the data is transformed. The default
@@ -55,24 +57,26 @@ Imagine that we want to get all the users of two different services F
 and G. We are not interested in the different details, but want the
 instance of the users to be unique.
 
-    type Email = String
-    data User = User {
-      email :: Email,
-      contacts :: Maybe Int,
-      friends :: Maybe Int
-      } deriving (Eq,Show)
+```haskell
+type Email = String
+data User = User {
+  email :: Email,
+  contacts :: Maybe Int,
+  friends :: Maybe Int
+  } deriving (Eq,Show)
 
-    instance EquivalenceBy Email User where
-	  eqRel u = email u
+instance EquivalenceBy Email User where
+eqRel u = email u
 
-    usersF, usersG, allUsers :: Setoid Email User
-    usersF <- getUsers F
-    usersG <- getUsers G
+usersF, usersG, allUsers :: Setoid Email User
+usersF <- getUsers F
+usersG <- getUsers G
 
-    allUsers = Setoid.unionWith mergeContactDetails usersF usersG
+allUsers = Setoid.unionWith mergeContactDetails usersF usersG
 
-    mergeContactDetails :: User -> User -> User
-    ...
+mergeContactDetails :: User -> User -> User
+-- ... --
+```
 
 We assume that here are equivalent elements in both setoids - in this
 case they have the same email adress. Thus we use `Setoid.unionWith`
@@ -81,7 +85,9 @@ maximum, as the default implementation, or the left element only. We
 could also do computations and, for example, sum the number of
 friends/contacts from bothe services.
 
-    Setoid.size allUsers
+```haskell
+Setoid.size allUsers
+```
 
 Would give us the amount of all unique users in both services together.
 
@@ -96,8 +102,10 @@ Since `Setoid.union` is implemented as `Setoid.unionWith max` it makes the defau
 
 TupleSetoid already has the instance we would need in the Example 1:
 
-    instance EquivalenceBy eq (eq,val) where
-      eqRel = fst
+```haskell
+instance EquivalenceBy eq (eq,val) where
+  eqRel = fst
+```
 
 ## Future Work
 
@@ -136,7 +144,7 @@ Hope this will find more contributors and users now.
 
 ## License
 
-```
+```text
 Copyright (c) 2017, Global Access Internet Services GmbH
 
 All rights reserved.
