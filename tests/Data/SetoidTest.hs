@@ -1,11 +1,14 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Data.SetoidTest where
 
+import Control.Monad.Identity hiding (mapM)
 import Data.Setoid            hiding (ø, (\\), (∪))
+import Prelude                hiding (map, mapM, null)
 import Test.SmallCheck.Series
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -20,7 +23,7 @@ test_monoid_laws =
 
 test_construction :: [TestTree]
 test_construction =
-  [ testGroup "equality and equivalence" $
+  [ testGroup "empty and singleton" $
     [ testCase "empty" (ø @?= ø)
     , testProperty "not empty" (\x -> st x /= ø)
     , testProperty "equal to itself" (\x -> st x == st x)
@@ -45,16 +48,77 @@ test_construction =
         "unionWith max behaves the same as union"
         (d3 (\a b -> unionWith max a b == a ∪ b))
     ]
+  , testGroup "unions" $
+    [ testCase "zero" (unions [ø] @?= ø)
+    , testProperty "one" (\a -> unions [st a] == st a)
+    , testProperty "many" (d3 (\a b -> unions (a ++ [b]) == unions a ∪ b))
+    ]
+  , testGroup "difference" $
+    [ testProperty "identity" (d3 (\a -> (a \\ ø == a) && (ø \\ a == ø)))
+    , testProperty
+        "by definition"
+        (d3
+           (\a b ->
+              all (\x -> (x `member` a) && not (x `member` b)) (toList (a \\ b))))
+    ]
   ]
 
-test_difference :: [TestTree]
-test_difference =
-  [ testProperty "identity" (d3 (\a -> (a \\ ø == a) && (ø \\ a == ø)))
-  , testProperty
-      "definition of difference via List"
-      (d3
-         (\a b ->
-            all (\x -> (x `member` a) && not (x `member` b)) (toList (a \\ b))))
+test_queries :: [TestTree]
+test_queries =
+  [ testGroup "null" $
+    [ testCase "empty" (null ø @?= True)
+    , testProperty "singleton" (\a -> null (st a) == False)
+    ]
+  , testGroup "size" $
+    [ testCase "empty" (size ø @?= 0)
+    , testProperty "singleton" (\a -> size (st a) == 1)
+    , testProperty
+        "non emtpy"
+        (d4 (\a -> size (a :: Setoid Int (Int, Int)) == length (toList a)))
+    ]
+  , testGroup "member" $
+    [ testProperty "empty" (\x -> member x ø == False)
+    , testProperty "single element" (\x -> member x (st x) == True)
+    , testProperty "many elements" (d4 (\a x -> member x (a ∪ st x) == True))
+    , testProperty "many elements" (d4 (\a x -> member x (a \\ st x) == False))
+    ]
+  , testGroup "equivalence" $
+    [ testCase "empty case" (ø =~= ø @?= True)
+    , testProperty
+        "empty never equivalent to nonempty"
+        (\x -> not (ø =~= (st x)) && not (st x =~= ø))
+    , testProperty "singleton case" (\x -> st x =~= st x)
+    , testProperty
+        "not equivalent if eqRel is not equal"
+        (over
+           different
+           (\(x, y) ->
+              (eqRel x :: Int) /= (eqRel y :: Int) ==> not (st x =~= st y)))
+    , testProperty
+        "equivalent if eqRel is equal"
+        (over
+           similar
+           (\(x, y) -> (eqRel x :: Int) == (eqRel y :: Int) ==> st x =~= st y))
+    ]
+  ]
+
+test_traversal :: [TestTree]
+test_traversal =
+  [ testGroup "map" $
+    [ testProperty "∃ x ∈ a: ∀ y ∈ (map f a): f x == y" $
+      let f (x, y) = (x * y, x + y)
+      in (d4 $ forAll $ \(a :: Setoid Int (Int, Int)) ->
+            (`all` toList (map f a)) $ \y -> any (\x -> f x == y) (toList a))
+    , testProperty "∀ x ∈ a: f x ∈ (map f a))" $
+      let f (x, y) = (x * y, x + y)
+      in (d4 $ forAll $ \(a :: Setoid Int (Int, Int)) ->
+            (`all` toList a) $ \x -> f x `member` (map f a))
+    ]
+  , testGroup "mapM" $
+    [ testProperty "is equivalent to pure version" $
+      (\(f :: (Int, Int) -> (Int, Int)) (a :: Setoid Int (Int, Int)) ->
+         mapM (return . f) a `mEqual` return (map f a))
+    ]
   ]
 
 test_conversion :: [TestTree]
@@ -63,17 +127,14 @@ test_conversion =
     [ testCase "zero" (fromList [] @?= ø)
     , testProperty "singleton" (\x -> fromList [x] =~= st x)
     , testProperty
-        "union eq"
+        "via union"
         (d3 (\xs ys -> fromList (xs ++ ys) == fromList xs ∪ fromList ys))
     , testProperty
-        "union equiv"
-        (d3 (\xs ys -> fromList (xs ++ ys) =~= fromList ys ∪ fromList xs))
-    , testProperty
-        "union transitive"
+        "transitivity"
         (d3
            (\xs ys zs ->
-              fromList (xs ++ ys) ∪ fromList zs =~= fromList xs ∪
-              fromList (ys ++ zs)))
+              (fromList (xs ++ ys) ∪ fromList zs) =~=
+              (fromList xs ∪ fromList (ys ++ zs))))
     ]
   , testGroup "fromListWith" $
     [ testProperty
@@ -105,11 +166,14 @@ st = singleton
 (\\) :: Setoid Int (Int, Int) -> Setoid Int (Int, Int) -> Setoid Int (Int, Int)
 (\\) = difference
 
-different2 :: Series m (Int, Int)
-different2 = generate (\d -> [(k + 1, k + 2) | k <- [0 .. d]])
+different :: Series m ((Int, Int), (Int, Int))
+different =
+  generate (\d -> [((x - 1, y), (x + 1, y)) | x <- [0 .. d], y <- [0 .. 10]])
 
-similar2 :: Series m (Int, Int)
-similar2 = generate (\d -> [(k, k) | k <- [0 .. d]])
+similar :: Series m ((Int, Int), (Int, Int))
+similar =
+  generate
+    (\d -> [((x, y), (x, z)) | x <- [0 .. d], y <- [0 .. 5], z <- [4 .. 9]])
 
 similar3 :: Series m (Int, Int, Int)
 similar3 = generate (\d -> [(k, k, k) | k <- [0 .. d]])
@@ -124,6 +188,16 @@ isInverseOf f g a = (g . f) a == a
 instance (Monad m, Ord k, Ord v, Serial m v, EquivalenceBy k v) =>
          Serial m (Setoid k v) where
   series = fromList <$> series
+
+mEqual :: (Identity (Setoid Int (Int, Int)))
+       -> (Identity (Setoid Int (Int, Int)))
+       -> Bool
+mEqual f g = runIdentity f == runIdentity g
+
+d1
+  :: Testable m a
+  => a -> Property m
+d1 = changeDepth (const 1)
 
 d2
   :: Testable m a

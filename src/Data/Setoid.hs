@@ -15,27 +15,12 @@ the same as equality. This makes it more strict regarding membership
 of elements as compared to sets. If equivalence relation is equality,
 though, then setoid has the same properties as a set.
 
-== Usage examples
+== Usage
 
-When manipulating collections of objects in the real world, we often
-use lists/arrays. Sometimes we wouls like to express some properties
-of the relation between the elements though, and the simple lists do
-not provide such possibility. As with the famous "Data.Set" library
-from the containers this library provides a guarantee that a setoid is
-correct by construction, and also that any manipulations will not
-break this promise.
-
-It is useful for things like time series of sampling data, collections
-of users (who are unique by username or email) to keep the same
-structure as the one which would be used in the database with unique
-indexes.
-
-=== Apples and Oranges
-
-To give a simple example, we will try start with somewhat obscure idea
-of combining apples and oranges to a Setoid of fruit names (by
-color). We want one fruit per colour as a result and don't care if its
-apple or an orange.
+To give a simple example, lets try out a somewhat obscure idea of
+combining apples and oranges into a Setoid of fruit names (by color). We
+want one fruit per colour as a result and don't care if its apple or
+an orange.
 
 @
 import Data.Setoid (Setoid)
@@ -58,7 +43,7 @@ One can see the benefit of using a `Setoid` instead of "Data.List"
 because with the latter, we would have to use 'Data.List.nubBy' every
 time the data is transformed.
 
-When performing a union, our implementation would use `max` between
+When performing a `union`, our implementation would use `max` between
 two equivalent elements to resolve the conflict. Bear in mind, that
 the elements, though equivalent, might not be equal. In the example
 above, ordering of @ "seville" @ is bigger than @ "golden delicious" @
@@ -108,10 +93,8 @@ in both services together.
 
 -}
 --------------------------------------------------------------------
-module Data.Setoid (
-  -- {{{
-  -- * Type
-    Setoid
+module Data.Setoid
+  ( Setoid
     -- * Class
   , EquivalenceBy(..)
     -- * Operators
@@ -128,9 +111,14 @@ module Data.Setoid (
     -- * Difference
   , difference
     -- * Query
-  , member
   , null
+  , size
+  , member
   , equivalence
+    -- * Traversal
+    -- ** map
+  , map
+  , mapM
     -- * Conversion
   , fromList
   , fromListWith
@@ -148,7 +136,7 @@ import qualified Prelude                 as P
 -- | Instance Show, used for debugging
 instance (Show a) =>
          Show (Setoid e a) where
-  show s = "Setoid {\n" ++ P.unlines (P.map show (toList s)) ++ "}"
+  show s = "{{ " ++ P.unlines (P.map show (toList s)) ++ " }}"
 
 -- | Monoid instance for Setoid
 instance (Ord e, Ord a) =>
@@ -195,6 +183,7 @@ singleton
   => a -> Setoid e a
 singleton a = Setoid (Map.singleton (eqRel a) a)
 
+-- ** Combining
 -- | Combine two Setoids resolving conflicts with `max` by
 -- default. This makes the union operation commutative and
 -- associative.
@@ -219,6 +208,7 @@ unions
   => [Setoid e a] -> Setoid e a
 unions = List.foldl' union empty
 
+-- ** Difference
 -- | Difference of two setoids. Return elements of the first setoid
 -- not existing in the second setoid.
 difference
@@ -226,16 +216,20 @@ difference
   => Setoid e a -> Setoid e a -> Setoid e a
 difference (Setoid x) (Setoid y) = Setoid (Map.difference x y)
 
--- * Conversion
--- | Test if an element is a member of a Setoid
+-- * Query
+-- | Test if Setoid is empty
+null :: Setoid e a -> Bool
+null (Setoid x) = Map.null x
+
+-- | Get the size of a setoid
+size :: Setoid e a -> Int
+size (Setoid x) = Map.size x
+
+-- | Test if an element is a member of a setoid
 member
   :: (EquivalenceBy e a, Ord e)
   => a -> Setoid e a -> Bool
 member e (Setoid x) = Map.member (eqRel e) x
-
--- | Test if Setoid is empty
-null :: Setoid e a -> Bool
-null (Setoid x) = Map.null x
 
 -- | Test if two Setoids are equivalent i.e. if all the elements are
 -- equivalent
@@ -243,6 +237,19 @@ equivalence
   :: (Eq e)
   => Setoid e a -> Setoid e a -> Bool
 equivalence (Setoid x) (Setoid y) = Map.keys x == Map.keys y
+
+-- * Traversal
+-- | Map a function over elements of a setoid
+map
+  :: (EquivalenceBy eb b, Ord eb, Ord b)
+  => (a -> b) -> Setoid ea a -> Setoid eb b
+map f = fromList . P.map f . toList
+
+-- | Monadic variant of a map
+mapM
+  :: (Monad m, EquivalenceBy eb b, Ord eb, Ord b)
+  => (a -> m b) -> Setoid ea a -> m (Setoid eb b)
+mapM f xs = fromList <$> P.mapM f (toList xs)
 
 -- * Conversion
 -- ** Lists
@@ -258,10 +265,11 @@ fromList
   => [a] -> Setoid e a
 fromList = fromListWith max
 
--- | A generalized version of fromList, which accepts a function
--- invoked if a conflict between two equivalent elements has to be
--- resolved
+-- | A generalized version of fromList, which will use a supplied
+-- funtion if two equivalent elements are found in the input list
 fromListWith
   :: (EquivalenceBy e a, Ord e)
   => (a -> a -> a) -> [a] -> Setoid e a
-fromListWith f = Setoid . Map.fromListWith f . P.map (\x -> (eqRel x, x)) -- O(n+(n*log n)) -- An implementation of List.foldl' (\a b -> union a (singleton b)) empty would be O(n*2n)
+fromListWith f = Setoid . Map.fromListWith f . P.map (\x -> (eqRel x, x))
+-- O(n+(n*log n))
+-- An implementation of List.foldl' (\a b -> union a (singleton b)) empty would be O(n*2n)

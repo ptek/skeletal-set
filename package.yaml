@@ -30,6 +30,7 @@ tests:
     main:             RunTests.hs
     ghc-options:      -Wall -threaded  -rtsopts -with-rtsopts=-N -O
     dependencies:
+      - mtl
       - setoid
       - smallcheck
       - tasty
