@@ -8,17 +8,50 @@ Copyright : (c) Global Access Internet Services GmbH
 License   : BSD3
 Maintainer: Pavlo Kerestey <pavlo@kerestey.net>
 
-This is a Haskell implementation of setoid
-(https://en.wikipedia.org/wiki/Setoid) - a set equipped with an
-equivalence relation. Mostly, one would chose equivalence to be not
-the same as equality. This makes it more strict regarding membership
-of elements as compared to sets. If equivalence relation is equality,
-though, then setoid has the same properties as a set.
+A Haskell implementation of
+[setoid](https://en.wikipedia.org/wiki/Setoid) - a set equipped with
+an equivalence relation. Setoid is a useful data structure when
+equivalence is chosen not to be equality. This allows to influence the
+membership of the elements in a setoid. When equality is all one needs
+- using sets is a better option.
+
+Here we have chosen to use a specific variant of equivalence of
+transforming the elements to comparable intermediaries. Although it
+does not make every equivalence relation possible, it is a practial
+choice for a lot of computations.
 
 == Usage
 
-To give a simple example, lets try out a somewhat obscure idea of
-combining apples and oranges into a Setoid of fruit names (by color). We
+When manipulating collections of objects in the real world, we often
+use lists/arrays. Sometimes we need to represent some properties of
+the relation between the elements though, and the lists do not provide
+such possibility. This library not only provides the guarantee that a
+setoid is correct by construction, but also that the manipulations
+will not change its structure.
+
+We use it to run computations over time series of sampling data,
+collections of users (who are unique by username or email) - to keep
+the same structure as the one which would be used in the database with
+unique indexes.
+
+To implement equivalence we chose to use a data class `EquivalenceBy`
+which provides a method of mapping an element to an intermediary,
+which is then used for comparison and ultimately lead to a choice
+of the members.
+
+The type of a setoid is `Setoid e a` where `a` is the member type and
+e is the type of equivalence intermediary. To chose the members of the
+setoid we compare the e(quivalences) of the elements with each other.
+
+The definition of `EquivalenceBy e a` is
+
+@
+class EquivalenceBy e a where
+  eqRel :: a -> e
+@
+
+To give a simple example of how the library could be used we will
+combine apples and oranges to a Setoid of fruit names by color. We
 want one fruit per colour as a result and don't care if its apple or
 an orange.
 
@@ -91,10 +124,22 @@ of the function itself though.
 @ Setoid.size allUsers @ Would give us the amount of all unique users
 in both services together.
 
+== Future Work
+
+- There is an unproven hypothesis about a relation between setoids and
+  Quotient Sets. It seems, that a `Setoid (a,b) (a,b,c)` is equivalent
+  to a `QuotientSet a (Setoid b (a,b,c))`. This means that every
+  QuotientSet can actually be represented as a setoid.
+
+- Performance is another issue. Current implementation uses the
+  `newtype Setoid x y = Setoid (Map x y)` which may be inefficient.
+
+
 -}
 --------------------------------------------------------------------
 module Data.Setoid
-  ( Setoid
+  ( -- * Type
+    Setoid
     -- * Class
   , EquivalenceBy(..)
     -- * Operators
