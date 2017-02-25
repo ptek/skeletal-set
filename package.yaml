@@ -5,7 +5,8 @@ description:         Setoid (https://en.wikipedia.org/wiki/Setoid) is a set
                      equipped with an equivalence relation. Mostly, one would
                      chose equivalence to be not the same as equality. This
                      makes it more strict regarding membership of elements as
-                     compared to set. For full description, please see README.md
+                     compared to set. For full description, please see
+                     documentation of Data.Setoid
 license:             BSD3
 author:              Pavlo Kerestey
 maintainer:          kerestey@global.de

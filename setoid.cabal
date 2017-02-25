@@ -5,7 +5,7 @@
 name:                setoid
 version:             0.1.0.0
 synopsis:            A Haskell implementation of setoid
-description:         Setoid (https://en.wikipedia.org/wiki/Setoid) is a set equipped with an equivalence relation. Mostly, one would chose equivalence to be not the same as equality. This makes it more strict regarding membership of elements as compared to set. For full description, please see README.md
+description:         Setoid (https://en.wikipedia.org/wiki/Setoid) is a set equipped with an equivalence relation. Mostly, one would chose equivalence to be not the same as equality. This makes it more strict regarding membership of elements as compared to set. For full description, please see documentation of Data.Setoid
 license:             BSD3
 license-file:        LICENSE
 author:              Pavlo Kerestey
