@@ -8,7 +8,7 @@ module Data.SetoidTest where
 
 import Control.Monad.Identity hiding (mapM)
 import Data.Setoid            hiding (ø, (\\), (∪))
-import Prelude                hiding (map, mapM, null)
+import Prelude                hiding (map, mapM, filter, null)
 import Test.SmallCheck.Series
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -61,6 +61,14 @@ test_construction =
            (\a b ->
               all (\x -> (x `member` a) && not (x `member` b)) (toList (a \\ b))))
     ]
+  , testGroup "filter" $
+    [ testProperty "empty" (d3 (\a -> (filter (const True) a == (a :: TestSetoid))))
+    , testProperty "empty" (d3 (\a -> (filter (const False) a == ø)))
+    , testProperty "by definition" $
+        let p = even . fst
+        in d4 $ \(a :: TestSetoid) ->
+           all (\x -> p x && (x `member` a)) (toList (filter p a))
+    ]
   ]
 
 test_queries :: [TestTree]
@@ -74,7 +82,7 @@ test_queries =
     , testProperty "singleton" (\a -> size (st a) == 1)
     , testProperty
         "non emtpy"
-        (d4 (\a -> size (a :: Setoid Int (Int, Int)) == length (toList a)))
+        (d4 (\a -> size (a :: TestSetoid) == length (toList a)))
     ]
   , testGroup "member" $
     [ testProperty "empty" (\x -> member x ø == False)
@@ -107,17 +115,26 @@ test_traversal =
   [ testGroup "map" $
     [ testProperty "∃ x ∈ a: ∀ y ∈ (map f a): f x == y" $
       let f (x, y) = (x * y, x + y)
-      in (d4 $ forAll $ \(a :: Setoid Int (Int, Int)) ->
-            (`all` toList (map f a)) $ \y -> any (\x -> f x == y) (toList a))
+      in (d4 $ forAll $ \(a :: TestSetoid) ->
+            (`all` toList (map f a :: TestSetoid)) $ \y ->
+                   any (\x -> f x == y) (toList a))
     , testProperty "∀ x ∈ a: f x ∈ (map f a))" $
       let f (x, y) = (x * y, x + y)
-      in (d4 $ forAll $ \(a :: Setoid Int (Int, Int)) ->
-            (`all` toList a) $ \x -> f x `member` (map f a))
+      in (d4 $ forAll $ \(a :: TestSetoid) ->
+            (`all` toList a) $ \x ->
+                   f x `member` (map f a :: TestSetoid))
+    ]
+  , testGroup "mapResolve" $
+    [ testProperty "Is the same as map when chosing `max` as resolver" $
+      let f (x,y) = (x*y, x+y)
+      in d3 $ \(a :: TestSetoid) ->
+         mapResolve max f a == (map f a :: TestSetoid)
     ]
   , testGroup "mapM" $
-    [ testProperty "is equivalent to pure version" $
-      (\(f :: (Int, Int) -> (Int, Int)) (a :: Setoid Int (Int, Int)) ->
-         mapM (return . f) a `mEqual` return (map f a))
+    [ testProperty "Results are equivalent to pure version. Note the ordering" $
+      let f (x,y) = (x*y, x+y)
+      in d3 $ \(a :: TestSetoid) ->
+         mapM (return . f) a `mEqual` return (map f a)
     ]
   ]
 
@@ -140,7 +157,7 @@ test_conversion =
     [ testProperty
         "fromListWith max == fromList"
         (d4
-           (\xs -> fromListWith max xs == (fromList xs :: Setoid Int (Int, Int))))
+           (\xs -> fromListWith max xs == (fromList xs :: TestSetoid)))
     ]
   , testGroup "toList" $
     [testProperty "inverse to fromList" (d4 (toList `isInverseOf` fromList))]
@@ -149,21 +166,23 @@ test_conversion =
 instance EquivalenceBy k (k, v) where
   eqRel = fst
 
+type TestSetoid = Setoid Int (Int, Int)
+
 st
   :: EquivalenceBy Int (Int, Int)
   => (Int, Int) -> Setoid Int (Int, Int)
 st = singleton
 
-ø :: Setoid Int (Int, Int)
+ø :: TestSetoid
 ø = empty
 
-(<>) :: Setoid Int (Int, Int) -> Setoid Int (Int, Int) -> Setoid Int (Int, Int)
+(<>) :: TestSetoid -> TestSetoid -> TestSetoid
 (<>) = mappend
 
-(∪) :: Setoid Int (Int, Int) -> Setoid Int (Int, Int) -> Setoid Int (Int, Int)
+(∪) :: TestSetoid -> TestSetoid -> TestSetoid
 (∪) = union
 
-(\\) :: Setoid Int (Int, Int) -> Setoid Int (Int, Int) -> Setoid Int (Int, Int)
+(\\) :: TestSetoid -> TestSetoid -> TestSetoid
 (\\) = difference
 
 different :: Series m ((Int, Int), (Int, Int))
@@ -179,9 +198,9 @@ similar3 :: Series m (Int, Int, Int)
 similar3 = generate (\d -> [(k, k, k) | k <- [0 .. d]])
 
 isInverseOf
-  :: (Setoid Int (Int, Int) -> a)
-  -> (a -> Setoid Int (Int, Int))
-  -> Setoid Int (Int, Int)
+  :: (TestSetoid -> a)
+  -> (a -> TestSetoid)
+  -> TestSetoid
   -> Bool
 isInverseOf f g a = (g . f) a == a
 
@@ -189,8 +208,8 @@ instance (Monad m, Ord k, Ord v, Serial m v, EquivalenceBy k v) =>
          Serial m (Setoid k v) where
   series = fromList <$> series
 
-mEqual :: (Identity (Setoid Int (Int, Int)))
-       -> (Identity (Setoid Int (Int, Int)))
+mEqual :: (Identity (TestSetoid))
+       -> (Identity (TestSetoid))
        -> Bool
 mEqual f g = runIdentity f == runIdentity g
 

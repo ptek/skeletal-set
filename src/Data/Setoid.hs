@@ -155,6 +155,8 @@ module Data.Setoid
   , unionWith
     -- * Difference
   , difference
+    -- * Filter
+  , filter
     -- * Query
   , null
   , size
@@ -163,6 +165,7 @@ module Data.Setoid
     -- * Traversal
     -- ** map
   , map
+  , mapResolve
   , mapM
     -- * Conversion
   , fromList
@@ -261,6 +264,14 @@ difference
   => Setoid e a -> Setoid e a -> Setoid e a
 difference (Setoid x) (Setoid y) = Setoid (Map.difference x y)
 
+-- ** Filter
+-- | Filter a setoid. Return a setoid with elements that statisfy the
+-- predicate
+filter
+  :: (Ord e)
+  => (a -> Bool) -> Setoid e a -> Setoid e a
+filter p (Setoid s) = Setoid (Map.filter p s)
+
 -- * Query
 -- | Test if Setoid is empty
 null :: Setoid e a -> Bool
@@ -284,11 +295,23 @@ equivalence
 equivalence (Setoid x) (Setoid y) = Map.keys x == Map.keys y
 
 -- * Traversal
--- | Map a function over elements of a setoid
+-- | Map a function over elements of a setoid. It resolves conflict in
+-- the result by chosing the maximum one
 map
   :: (EquivalenceBy eb b, Ord eb, Ord b)
   => (a -> b) -> Setoid ea a -> Setoid eb b
-map f = fromList . P.map f . toList
+map f a = fromList (P.map f (toList a))
+
+-- | Generalized version of map, allowing to use custom function to
+-- resolve a conflict if two equivalent elements are found in the
+-- result
+mapResolve
+  :: (EquivalenceBy eb b, Ord eb)
+  => (b -> b -> b) -- ^ conflict resolution function
+  -> (a -> b)      -- ^ map function
+  -> Setoid ea a   -- ^ input
+  -> Setoid eb b   -- ^ result
+mapResolve r f a = fromListWith r (P.map f (toList a))
 
 -- | Monadic variant of a map
 mapM

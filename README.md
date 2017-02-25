@@ -1,20 +1,16 @@
 # Setoid
 
-A Haskell implementation of
-[setoid](https://en.wikipedia.org/wiki/Setoid) - a set equipped with
-an equivalence relation. Setoid is a useful data structure when
-equivalence is chosen not to be equality. This allows to influence the
-membership of the elements in a setoid. When equality is all one needs
-- using sets is a better option.
-
-Here we have chosen to use a specific variant of equivalence of
-transforming the elements to comparable intermediaries. Although it
-does not make every equivalence relation possible, it is a practial
-choice for a lot of computations.
+A Haskell implementation
+of [setoid](https://en.wikipedia.org/wiki/Setoid) - a set equipped
+with an equivalence relation. Setoid is a useful data structure when
+equivalence is chosen not to be equality. One can use it to influence
+the memberships of the elements more strictly and run computations
+when conflicts between elements are purposely created.
 
 ## Usage
 
-Please have a look at the documentation of Data.Setoid on hackage to see use cases and more in-depth explanations.
+For more in-depth explanations and examples, please have a look at the
+documentation on hackage.
 
 
 ## Authors:
