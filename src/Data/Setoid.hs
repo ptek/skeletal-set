@@ -9,7 +9,7 @@ License   : BSD3
 Maintainer: Pavlo Kerestey <pavlo@kerestey.net>
 
 A Haskell implementation of
-[setoid](https://en.wikipedia.org/wiki/Setoid) - a set equipped with
+<https://en.wikipedia.org/wiki/Setoid setoid> - a set equipped with
 an equivalence relation. Setoid is a useful data structure when
 equivalence is chosen not to be equality. This allows to influence the
 membership of the elements in a setoid. When equality is all one needs
@@ -340,4 +340,5 @@ fromListWith
   => (a -> a -> a) -> [a] -> Setoid e a
 fromListWith f = Setoid . Map.fromListWith f . P.map (\x -> (eqRel x, x))
 -- O(n+(n*log n))
--- An implementation of List.foldl' (\a b -> union a (singleton b)) empty would be O(n*2n)
+-- An implementation of List.foldl' (\a b -> union a (singleton b)) empty
+-- would be O(n*2n)
