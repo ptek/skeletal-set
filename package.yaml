@@ -22,11 +22,11 @@ extra-source-files:
 
 dependencies:
   - base >= 4.7 && < 5
-  - containers
+  - containers >= 0.5 && < 0.6
 
 library:
   source-dirs: src
-  ghc-options:      -Wall -Werror -O2
+  ghc-options:      -Wall -O2
 
 tests:
   setoid-test:
