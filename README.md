@@ -9,17 +9,20 @@ run computations on unions when conflicts between elements are found.
 For more in-depth explanations and examples, please have a look at the
 documentation on hackage.
 
-## Authors:
-*  [Pavlo Kerestey](https://github.com/ptek)
-*  [Irek Jozwiak](https://github.com/irekjozwiak)
-*  [Simon Zelazny](https://github.com/pzel)
+### Copyright:
+* [Global Access Internet Services GmbH](http://www.global.de)
 
-### Copyright: [Global Access Internet Services GmbH](http://www.global.de)
+### Authors:
+* [Pavlo Kerestey](https://github.com/ptek)
+* [Simon Zelazny](https://github.com/pzel)
+* [Irek Jozwiak](https://github.com/irekjozwiak) - Author of the predecessor
+  implementation of sets wich stricter guarantees and the idea of Setoid in
+  Haskell.
 
 ## License
 
 ```text
-    Copyright (c) 2009-2017, Global Access Internet Services GmbH
+    Copyright (c) 2017, Global Access Internet Services GmbH
     
     All rights reserved.
     
