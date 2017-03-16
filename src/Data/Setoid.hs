@@ -17,7 +17,7 @@ membership of the elements in a setoid. When equality is all one needs
 
 Here we have chosen to use a specific variant of equivalence of
 transforming the elements to comparable intermediaries. Although it
-does not make every equivalence relation possible, it is a practial
+does not make every equivalence relation possible, it is a practical
 choice for a lot of computations.
 
 == Usage
@@ -51,7 +51,7 @@ class EquivalenceBy e a where
 @
 
 To give a simple example of how the library could be used we will
-combine apples and oranges to a Setoid of fruit names by color. We
+combine apples and oranges to a Setoid of fruit names by colour. We
 want one fruit per colour as a result and don't care if its apple or
 an orange.
 
@@ -110,14 +110,14 @@ mergeContactDetails a b = User (email a) (contacts a + contacts b)
 @
 
 We assume that here are equivalent elements in both setoids - in this
-case they have the same email adress. Thus we use `unionWith` to merge
+case they have the same email address. Thus we use `unionWith` to merge
 the other details of the contact. Here, we could also do computations
-and, for example, sum the number of friends/contacts from bothe
+and, for example, sum the number of friends/contacts from both
 services.
 
-Here is also one of the shortcommings of the
+Here is also one of the shortcomings of the
 library. mergeContactDetails choses the email of the first
-argument. Sinse in the context of unionWith, the emails of the first
+argument. Since in the context of unionWith, the emails of the first
 and the second users are the same. It is not nice from the perspective
 of the function itself though.
 
