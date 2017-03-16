@@ -26,7 +26,7 @@ dependencies:
 
 library:
   source-dirs: src
-  ghc-options:      -Wall -O2
+  ghc-options:      -Wall
 
 tests:
   setoid-test:
