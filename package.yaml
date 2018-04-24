@@ -30,7 +30,7 @@ tests:
   skeletal-set-test:
     source-dirs:      tests
     main:             RunTests.hs
-    ghc-options:      -Wall -threaded -rtsopts -with-rtsopts=-N -O
+    ghc-options:      -Wall -threaded -rtsopts -with-rtsopts=-N
     dependencies:
       - mtl
       - skeletal-set

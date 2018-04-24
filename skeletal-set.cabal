@@ -2,11 +2,11 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 437e44aa31928211018be76d82fe483c14635295f61b542b9de1ca7371077295
+-- hash: cece4f190ab5fb3989e1444ed726ce512791d2156618fb401c66949ebc717d36
 
 name:           skeletal-set
 version:        0.1.0.0
-synopsis:       A Haskell implementation of skeletal set
+synopsis:       Skeletal set - a set with equivalence relation different from equality
 description:    Skeletal Set is a set equipped with an equivalence relation. It is a useful data structure in cases where equivalence is chosen not to be equality. One can use it to influence the memberships of the elements more strictly than in sets, and run computations when conflicts between elements are found.
                 You can find more deatails in `Data.SkeletalSet`
 category:       Data
@@ -42,7 +42,7 @@ test-suite skeletal-set-test
   main-is: RunTests.hs
   hs-source-dirs:
       tests
-  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N -O
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , containers >=0.5 && <0.6
