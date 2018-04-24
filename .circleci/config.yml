@@ -7,10 +7,10 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - stack-ghc-8.2.2-{{ arch }}-{{ checksum "stack-8.2.2.yaml" }}
+            - stack-ghc-8.2.2-{{ arch }}
       - run: stack test
       - save_cache:
-          key: stack-ghc-8.2.2-{{ arch }}-{{ checksum "stack-8.2.2.yaml" }}
+          key: stack-ghc-8.2.2-{{ arch }}
           paths:
             - /root/.stack
 
