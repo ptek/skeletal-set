@@ -2,16 +2,16 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      : Data.Setoid.Types
+-- Module      : Data.SkeletalSet.Types
 -- Copyright   : (c) Global Access Internet Services GmbH 2017
 -- License     : BSD3
 -- Maintainer  : Pavlo Kerestey <pavlo@kerestey.net>
 --------------------------------------------------------------------------------
-module Data.Setoid.Types where
+module Data.SkeletalSet.Types where
 
 import           Data.Map.Strict (Map)
 import           GHC.Generics    (Generic)
 
-newtype Setoid e a =
-  Setoid (Map e a)
+newtype SkeletalSet e a =
+  SkeletalSet (Map e a)
   deriving (Eq, Ord, Generic)

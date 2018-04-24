@@ -1,15 +1,13 @@
-name:                setoid
+name:                skeletal-set
 version:             0.1.0.0
-synopsis:            A Haskell implementation of setoid
-description:         Setoid (<https://en.wikipedia.org/wiki/Setoid>) is a set
-                     equipped with an equivalence relation. Setoid is a useful
-                     data structure in cases where equivalence is chosen not
-                     to be equality. One can use it to influence the memberships
-                     of the elements more strictly, as opposed to sets, and run
-                     computations on unions when conflicts between elements are
-                     found.
+synopsis:            Skeletal set - a set with equivalence relation different from equality
+description:         Skeletal Set is a set equipped with an equivalence relation.
+                     It is a useful data structure in cases where equivalence is 
+                     chosen not to be equality. One can use it to influence the 
+                     memberships of the elements more strictly than in sets, and run
+                     computations when conflicts between elements are found.
 
-                     You can find more deatails in `Data.Setoid`
+                     You can find more deatails in `Data.SkeletalSet`
 license:             BSD3
 author:              Pavlo Kerestey
 maintainer:          kerestey@global.de
@@ -26,16 +24,16 @@ dependencies:
 
 library:
   source-dirs: src
-  ghc-options:      -Wall
+  ghc-options: -Wall
 
 tests:
-  setoid-test:
+  skeletal-set-test:
     source-dirs:      tests
     main:             RunTests.hs
-    ghc-options:      -Wall -threaded  -rtsopts -with-rtsopts=-N -O
+    ghc-options:      -Wall -threaded -rtsopts -with-rtsopts=-N -O
     dependencies:
       - mtl
-      - setoid
+      - skeletal-set
       - smallcheck
       - tasty
       - tasty-discover

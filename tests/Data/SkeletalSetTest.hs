@@ -2,12 +2,13 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE MonoLocalBinds        #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Data.SetoidTest where
+module Data.SkeletalSetTest where
 
 import Control.Monad.Identity hiding (mapM)
-import Data.Setoid            hiding (ø, (\\), (∪))
+import Data.SkeletalSet            hiding (ø, (\\), (∪))
 import Prelude                hiding (map, mapM, filter, null)
 import Test.SmallCheck.Series
 import Test.Tasty
@@ -62,11 +63,11 @@ test_construction =
               all (\x -> (x `member` a) && not (x `member` b)) (toList (a \\ b))))
     ]
   , testGroup "filter" $
-    [ testProperty "empty" (d3 (\a -> (filter (const True) a == (a :: TestSetoid))))
+    [ testProperty "empty" (d3 (\a -> (filter (const True) a == (a :: TestSet))))
     , testProperty "empty" (d3 (\a -> (filter (const False) a == ø)))
     , testProperty "by definition" $
         let p = even . fst
-        in d4 $ \(a :: TestSetoid) ->
+        in d4 $ \(a :: TestSet) ->
            all (\x -> p x && (x `member` a)) (toList (filter p a))
     ]
   ]
@@ -82,7 +83,7 @@ test_queries =
     , testProperty "singleton" (\a -> size (st a) == 1)
     , testProperty
         "non emtpy"
-        (d4 (\a -> size (a :: TestSetoid) == length (toList a)))
+        (d4 (\a -> size (a :: TestSet) == length (toList a)))
     ]
   , testGroup "member" $
     [ testProperty "empty" (\x -> member x ø == False)
@@ -115,25 +116,25 @@ test_traversal =
   [ testGroup "map" $
     [ testProperty "∃ x ∈ a: ∀ y ∈ (map f a): f x == y" $
       let f (x, y) = (x * y, x + y)
-      in (d4 $ forAll $ \(a :: TestSetoid) ->
-            (`all` toList (map f a :: TestSetoid)) $ \y ->
+      in (d4 $ forAll $ \(a :: TestSet) ->
+            (`all` toList (map f a :: TestSet)) $ \y ->
                    any (\x -> f x == y) (toList a))
     , testProperty "∀ x ∈ a: f x ∈ (map f a))" $
       let f (x, y) = (x * y, x + y)
-      in (d4 $ forAll $ \(a :: TestSetoid) ->
+      in (d4 $ forAll $ \(a :: TestSet) ->
             (`all` toList a) $ \x ->
-                   f x `member` (map f a :: TestSetoid))
+                   f x `member` (map f a :: TestSet))
     ]
   , testGroup "mapResolve" $
     [ testProperty "Is the same as map when chosing `max` as resolver" $
       let f (x,y) = (x*y, x+y)
-      in d3 $ \(a :: TestSetoid) ->
-         mapResolve max f a == (map f a :: TestSetoid)
+      in d3 $ \(a :: TestSet) ->
+         mapResolve max f a == (map f a :: TestSet)
     ]
   , testGroup "mapM" $
     [ testProperty "Results are equivalent to pure version. Note the ordering" $
       let f (x,y) = (x*y, x+y)
-      in d3 $ \(a :: TestSetoid) ->
+      in d3 $ \(a :: TestSet) ->
          mapM (return . f) a `mEqual` return (map f a)
     ]
   ]
@@ -157,7 +158,7 @@ test_conversion =
     [ testProperty
         "fromListWith max == fromList"
         (d4
-           (\xs -> fromListWith max xs == (fromList xs :: TestSetoid)))
+           (\xs -> fromListWith max xs == (fromList xs :: TestSet)))
     ]
   , testGroup "toList" $
     [testProperty "inverse to fromList" (d4 (toList `isInverseOf` fromList))]
@@ -166,23 +167,23 @@ test_conversion =
 instance EquivalenceBy k (k, v) where
   eqRel = fst
 
-type TestSetoid = Setoid Int (Int, Int)
+type TestSet = SkeletalSet Int (Int, Int)
 
 st
   :: EquivalenceBy Int (Int, Int)
-  => (Int, Int) -> Setoid Int (Int, Int)
+  => (Int, Int) -> SkeletalSet Int (Int, Int)
 st = singleton
 
-ø :: TestSetoid
+ø :: TestSet
 ø = empty
 
-(<>) :: TestSetoid -> TestSetoid -> TestSetoid
+(<>) :: TestSet -> TestSet -> TestSet
 (<>) = mappend
 
-(∪) :: TestSetoid -> TestSetoid -> TestSetoid
+(∪) :: TestSet -> TestSet -> TestSet
 (∪) = union
 
-(\\) :: TestSetoid -> TestSetoid -> TestSetoid
+(\\) :: TestSet -> TestSet -> TestSet
 (\\) = difference
 
 different :: Series m ((Int, Int), (Int, Int))
@@ -198,18 +199,18 @@ similar3 :: Series m (Int, Int, Int)
 similar3 = generate (\d -> [(k, k, k) | k <- [0 .. d]])
 
 isInverseOf
-  :: (TestSetoid -> a)
-  -> (a -> TestSetoid)
-  -> TestSetoid
+  :: (TestSet -> a)
+  -> (a -> TestSet)
+  -> TestSet
   -> Bool
 isInverseOf f g a = (g . f) a == a
 
 instance (Monad m, Ord k, Ord v, Serial m v, EquivalenceBy k v) =>
-         Serial m (Setoid k v) where
+         Serial m (SkeletalSet k v) where
   series = fromList <$> series
 
-mEqual :: (Identity (TestSetoid))
-       -> (Identity (TestSetoid))
+mEqual :: (Identity (TestSet))
+       -> (Identity (TestSet))
        -> Bool
 mEqual f g = runIdentity f == runIdentity g
 

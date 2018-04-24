@@ -1,10 +1,6 @@
-# Setoid
+# Skeletal Set
 
-A Haskell implementation of [setoid](https://en.wikipedia.org/wiki/Setoid) - a
-set equipped with an equivalence relation. Setoid is a useful data structure in
-cases where equivalence is chosen not to be equality. One can use it to
-influence the memberships of the elements more strictly, as opposed to sets, and
-run computations on unions when conflicts between elements are found.
+Skeletal set is a set equipped with an equivalence relation. It is a useful data structure in cases where equivalence is chosen not to be equality. One can use it to influence the memberships of the elements more strictly than in sets, and run computations when conflicts between elements are found.
 
 For more in-depth explanations and examples, please have a look at the
 documentation on hackage.
@@ -16,8 +12,7 @@ documentation on hackage.
 * [Pavlo Kerestey](https://github.com/ptek)
 * [Simon Zelazny](https://github.com/pzel)
 * [Irek Jozwiak](https://github.com/irekjozwiak) - Author of the predecessor
-  implementation of sets wich stricter guarantees and the idea of Setoid in
-  Haskell.
+  implementation of sets with stricter guarantees and the idea of skeletal set written in Haskell.
 
 ## License
 

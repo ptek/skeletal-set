@@ -16,7 +16,7 @@
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
 #resolver: lts-7.16
-resolver: lts-8.2
+resolver: lts-11.6
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -41,8 +41,7 @@ packages:
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
-extra-deps:
-- tasty-discover-1.0.1
+extra-deps: []
 
 # Override default flag values for local packages and extra-deps
 flags: {}
