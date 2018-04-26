@@ -8,8 +8,9 @@
 -- Maintainer  : Pavlo Kerestey <pavlo@kerestey.net>
 --------------------------------------------------------------------------------
 module Data.SkeletalSet.Equivalence
-  ( EquivalenceBy(..)
-  ) where
+    ( EquivalenceBy(..)
+    )
+where
 
 -- | Equivalence class. It reduces the data to the part which is
 -- then being tested for equality in a SkeletalSet.
